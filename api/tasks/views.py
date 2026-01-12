@@ -1,5 +1,7 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
+from django.db.models import Q
+
 from .models import Task
 from .serializers import TaskSerializer
 
@@ -9,7 +11,10 @@ class TaskViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Task.objects.filter(assignee=self.request.user)
+        user = self.request.user
+        return Task.objects.filter(
+            Q(assignee=user) | Q(team__members=user)
+        ).distinct()
 
     def perform_create(self, serializer):
         serializer.save(assignee=self.request.user)
