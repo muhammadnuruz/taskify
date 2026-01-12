@@ -1,39 +1,36 @@
 from django.db import models
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
-
+from django.conf import settings
+from api.teams.models import Team
 
 class Task(models.Model):
-    STATUS_CHOICES = [
-        ('todo', 'To Do'),
-        ('in_progress', 'In Progress'),
-        ('done', 'Done'),
-    ]
-    name = models.CharField(max_length=100)
-    description = models.TextField(blank=True, null=True)
+    class Priority(models.TextChoices):
+        LOW = 'low', 'Past'
+        MEDIUM = 'medium', 'O\'rta'
+        HIGH = 'high', 'Yuqori'
+
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
     assignee = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True, blank=True,
-        related_name="tasks"
-    )
-    status = models.CharField(
-        max_length=20, choices=STATUS_CHOICES, default='todo'
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='assigned_tasks'
     )
     team = models.ForeignKey(
-        'teams.Team',
+        Team,
         on_delete=models.CASCADE,
         null=True,
         blank=True,
         related_name='tasks'
     )
-    due_date = models.DateField(null=True, blank=True)
+    due_date = models.DateTimeField(null=True, blank=True)
+    priority = models.CharField(
+        max_length=10,
+        choices=Priority.choices,
+        default=Priority.MEDIUM
+    )
+    is_completed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ['-created_at']
-        verbose_name = "Task"
-        verbose_name_plural = "Tasks"
 
     def __str__(self):
-        return f"{self.name} ({self.get_status_display()})"
+        return self.title

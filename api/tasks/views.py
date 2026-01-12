@@ -10,12 +10,13 @@ class TaskViewSet(viewsets.ModelViewSet):
     serializer_class = TaskSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def get_queryset(self):
-        user = self.request.user
-        return Task.objects.filter(
-            Q(assignee=user) | Q(team__members=user)
-        ).distinct()
-
+    def get_object_or_none(self, pk):
+        try:
+            return Task.objects.get(
+                Q(id=pk) & (Q(assignee=self.request.user) | Q(team__members=self.request.user))
+            )
+        except Task.DoesNotExist:
+            return None
     def perform_create(self, serializer):
         serializer.save(assignee=self.request.user)
 
